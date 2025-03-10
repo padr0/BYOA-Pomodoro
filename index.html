@@ -9,6 +9,7 @@
 <body>
     <div class="container">
         <h1>Pomodoro Timer</h1>
+        <div id="focusDisplay" class="focus-display"></div>
         
         <div class="timer">
             <div class="time-display">
@@ -51,6 +52,18 @@
         
         <div class="session-count">
             Completed: <span id="completedCount">0</span> / <span id="totalCycles">4</span>
+        </div>
+    </div>
+
+    <div id="focusModal" class="modal">
+        <div class="modal-content">
+            <h2>Set Your Focus</h2>
+            <p>What are you focusing on during this work session?</p>
+            <input type="text" id="focusInput" placeholder="Enter your focus...">
+            <div class="modal-buttons">
+                <button id="saveFocus" class="save-focus">Save</button>
+                <button id="skipFocus" class="skip-focus">Skip</button>
+            </div>
         </div>
     </div>
 

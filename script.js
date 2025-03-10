@@ -13,6 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalCyclesDisplay = document.getElementById('totalCycles');
     const toggleModeButton = document.getElementById('toggleMode');
     const addFiveMinutesButton = document.getElementById('addFiveMinutes');
+    const focusDisplay = document.getElementById('focusDisplay');
+    const focusModal = document.getElementById('focusModal');
+    const focusInput = document.getElementById('focusInput');
+    const saveFocusButton = document.getElementById('saveFocus');
+    const skipFocusButton = document.getElementById('skipFocus');
 
     // Timer variables
     let timer;
@@ -32,6 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Audio notification
     const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
+
+    // Add a variable to track current focus
+    let currentFocus = '';
 
     // Initialize the timer
     function initializeTimer() {
@@ -88,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
         completedCountDisplay.textContent = completedPomodoros.toString();
         totalCyclesDisplay.textContent = totalCycles.toString();
         updateTabTitle();
+        updateFocusDisplay();
     }
 
     // Update the Start/Pause button appearance
@@ -260,6 +269,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateDisplay();
         updateStatus();
+        
+        // If we switched to work mode, show the focus modal
+        if (currentMode === 'work' && !isRunning) {
+            showFocusModal();
+        } else {
+            updateFocusDisplay();
+        }
     }
 
     // Add this function to handle adding 5 minutes
@@ -276,6 +292,29 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Update the total duration for the timer calculation
         totalDuration += 300 * 1000; // Add 5 minutes in milliseconds
+    }
+
+    // Function to show the focus modal
+    function showFocusModal() {
+        focusInput.value = currentFocus;
+        focusModal.style.display = 'flex';
+        focusInput.focus();
+    }
+    
+    // Function to hide the focus modal
+    function hideFocusModal() {
+        focusModal.style.display = 'none';
+    }
+    
+    // Function to update the focus display
+    function updateFocusDisplay() {
+        if (currentFocus && currentMode === 'work') {
+            focusDisplay.textContent = `Currently focusing on: ${currentFocus}`;
+            focusDisplay.style.display = 'block';
+        } else {
+            focusDisplay.textContent = '';
+            focusDisplay.style.display = 'none';
+        }
     }
 
     // Event listeners
@@ -320,6 +359,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Event listeners for the focus modal
+    saveFocusButton.addEventListener('click', () => {
+        currentFocus = focusInput.value.trim();
+        hideFocusModal();
+        updateFocusDisplay();
+        // Start the timer after setting focus
+        startTimer();
+    });
+    
+    skipFocusButton.addEventListener('click', () => {
+        hideFocusModal();
+        // Start the timer without setting focus
+        startTimer();
+    });
+    
+    // Allow pressing Enter in the input field to save
+    focusInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            saveFocusButton.click();
+        }
+    });
+
     // Initialize
     totalCycles = parseInt(cyclesInput.value);
     initializeTimer();
@@ -328,4 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addFiveMinutesButton.style.backgroundColor = '#ccc';
     addFiveMinutesButton.style.opacity = '0.6';
     addFiveMinutesButton.style.cursor = 'not-allowed';
+
+    // Initialize focus display
+    updateFocusDisplay();
 }); 
