@@ -95,9 +95,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isRunning) {
             startPauseButton.textContent = 'Pause';
             startPauseButton.style.backgroundColor = 'var(--warning)';
+            // Enable the +5 Minutes button when timer is running
+            addFiveMinutesButton.disabled = false;
+            addFiveMinutesButton.style.backgroundColor = 'var(--primary-light)';
+            addFiveMinutesButton.style.opacity = '1';
+            addFiveMinutesButton.style.cursor = 'pointer';
         } else {
             startPauseButton.textContent = 'Start';
             startPauseButton.style.backgroundColor = 'var(--success)';
+            // Disable and grey out the +5 Minutes button when timer is not running
+            addFiveMinutesButton.disabled = true;
+            addFiveMinutesButton.style.backgroundColor = '#ccc';
+            addFiveMinutesButton.style.opacity = '0.6';
+            addFiveMinutesButton.style.cursor = 'not-allowed';
         }
         updateTabTitle();
     }
@@ -313,4 +323,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     totalCycles = parseInt(cyclesInput.value);
     initializeTimer();
+    // Initially disable the +5 Minutes button since timer starts paused
+    addFiveMinutesButton.disabled = true;
+    addFiveMinutesButton.style.backgroundColor = '#ccc';
+    addFiveMinutesButton.style.opacity = '0.6';
+    addFiveMinutesButton.style.cursor = 'not-allowed';
 }); 
