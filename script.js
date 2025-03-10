@@ -38,8 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Audio notification
     const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
 
-    // Add a variable to track current focus
+    // Add variables to track current focus and focus state
     let currentFocus = '';
+    let focusSkipped = false;
+    // Add a variable to track if a work session has been started
+    let workSessionStarted = false;
+    const motivationalQuote = "In a world of distraction, focusing is a superpower.";
 
     // Initialize the timer
     function initializeTimer() {
@@ -145,6 +149,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function startTimer() {
         if (isRunning) return;
         
+        // If we're in work mode and starting a new session, show the focus modal
+        if (currentMode === 'work' && !startTime) {
+            showFocusModal();
+            return;
+        }
+        
         isRunning = true;
         updateStartPauseButton();
         
@@ -163,53 +173,73 @@ document.addEventListener('DOMContentLoaded', () => {
         if (timer) clearInterval(timer);
         
         // Use setInterval with a short interval for more frequent updates
-        timer = setInterval(() => {
-            // Calculate elapsed time considering pauses
-            const currentTime = Date.now();
-            const elapsedTime = currentTime - startTime - elapsedPauseTime;
-            const remainingTime = Math.max(0, totalDuration - elapsedTime);
+        timer = setInterval(updateTimerDisplay, 100); // Update every 100ms for smoother countdown
+    }
+
+    // Function to update the timer display
+    function updateTimerDisplay() {
+        // Calculate elapsed time considering pauses
+        const currentTime = Date.now();
+        const elapsedTime = currentTime - startTime - elapsedPauseTime;
+        const remainingTime = Math.max(0, totalDuration - elapsedTime);
+        
+        // Convert to seconds for display
+        const remainingSeconds = Math.ceil(remainingTime / 1000);
+        updateTimeFromSeconds(remainingSeconds);
+        updateDisplay();
+        
+        // Check if timer has completed
+        if (remainingSeconds <= 0) {
+            // Timer completed
+            clearInterval(timer);
+            audio.play();
+            isRunning = false;
+            startTime = null;
+            pauseStartTime = null;
+            elapsedPauseTime = 0;
             
-            // Convert to seconds for display
-            const remainingSeconds = Math.ceil(remainingTime / 1000);
-            updateTimeFromSeconds(remainingSeconds);
-            updateDisplay();
-            
-            // Check if timer has completed
-            if (remainingSeconds <= 0) {
-                // Timer completed
-                clearInterval(timer);
-                audio.play();
-                isRunning = false;
-                startTime = null;
-                pauseStartTime = null;
-                elapsedPauseTime = 0;
+            // Switch modes
+            if (currentMode === 'work') {
+                completedPomodoros++;
                 
-                // Switch modes
-                if (currentMode === 'work') {
-                    completedPomodoros++;
-                    
-                    if (completedPomodoros % totalCycles === 0) {
-                        // Time for a long break
-                        currentMode = 'longBreak';
-                        updateTimeFromSeconds(parseInt(longBreakInput.value) * 60);
-                    } else {
-                        // Time for a short break
-                        currentMode = 'shortBreak';
-                        updateTimeFromSeconds(parseInt(shortBreakInput.value) * 60);
-                    }
+                if (completedPomodoros % totalCycles === 0) {
+                    // Time for a long break
+                    currentMode = 'longBreak';
+                    updateTimeFromSeconds(parseInt(longBreakInput.value) * 60);
                 } else {
-                    // Back to work
-                    currentMode = 'work';
-                    updateTimeFromSeconds(parseInt(workTimeInput.value) * 60);
+                    // Time for a short break
+                    currentMode = 'shortBreak';
+                    updateTimeFromSeconds(parseInt(shortBreakInput.value) * 60);
                 }
-                
-                updateStatus();
-                updateStartPauseButton();
-                
-                // Auto-start the next timer
-                startTimer();
+            } else {
+                // Back to work
+                currentMode = 'work';
+                updateTimeFromSeconds(parseInt(workTimeInput.value) * 60);
             }
-        }, 100); // Update every 100ms for smoother countdown
+            
+            updateStatus();
+            updateStartPauseButton();
+            
+            // Auto-start the next timer
+            startTimer();
+        }
+    }
+
+    // Function to start the timer after the modal has been handled
+    function startTimerAfterModal() {
+        isRunning = true;
+        updateStartPauseButton();
+        
+        // Set the start time and total duration
+        totalDuration = calculateTotalSeconds() * 1000;
+        startTime = Date.now();
+        elapsedPauseTime = 0;
+        
+        // Clear any existing interval
+        if (timer) clearInterval(timer);
+        
+        // Use setInterval with a short interval for more frequent updates
+        timer = setInterval(updateTimerDisplay, 100);
     }
 
     // Pause the timer
@@ -269,13 +299,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateDisplay();
         updateStatus();
-        
-        // If we switched to work mode, show the focus modal
-        if (currentMode === 'work' && !isRunning) {
-            showFocusModal();
-        } else {
-            updateFocusDisplay();
-        }
     }
 
     // Add this function to handle adding 5 minutes
@@ -308,10 +331,22 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Function to update the focus display
     function updateFocusDisplay() {
-        if (currentFocus && currentMode === 'work') {
-            focusDisplay.textContent = `Currently focusing on: ${currentFocus}`;
+        if (currentMode === 'work' && workSessionStarted) {
+            if (focusSkipped) {
+                // Show motivational quote when focus was skipped
+                focusDisplay.textContent = motivationalQuote;
+            } else if (currentFocus) {
+                // Show the user's focus
+                focusDisplay.textContent = `Currently focusing on: ${currentFocus}`;
+            } else {
+                // Hide if no focus and not skipped (should not happen in normal flow)
+                focusDisplay.textContent = '';
+                focusDisplay.style.display = 'none';
+                return;
+            }
             focusDisplay.style.display = 'block';
         } else {
+            // Hide focus display during breaks or before first work session
             focusDisplay.textContent = '';
             focusDisplay.style.display = 'none';
         }
@@ -362,16 +397,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event listeners for the focus modal
     saveFocusButton.addEventListener('click', () => {
         currentFocus = focusInput.value.trim();
+        focusSkipped = false; // User provided a focus
+        workSessionStarted = true; // Mark that a work session has started
         hideFocusModal();
         updateFocusDisplay();
-        // Start the timer after setting focus
-        startTimer();
+        
+        // Start the timer directly without showing the modal again
+        startTimerAfterModal();
     });
     
     skipFocusButton.addEventListener('click', () => {
+        focusSkipped = true; // User skipped providing a focus
+        workSessionStarted = true; // Mark that a work session has started
         hideFocusModal();
-        // Start the timer without setting focus
-        startTimer();
+        updateFocusDisplay();
+        
+        // Start the timer directly without showing the modal again
+        startTimerAfterModal();
     });
     
     // Allow pressing Enter in the input field to save
@@ -390,6 +432,6 @@ document.addEventListener('DOMContentLoaded', () => {
     addFiveMinutesButton.style.opacity = '0.6';
     addFiveMinutesButton.style.cursor = 'not-allowed';
 
-    // Initialize focus display
-    updateFocusDisplay();
+    // Initialize focus display to be empty at startup
+    focusDisplay.style.display = 'none';
 }); 
