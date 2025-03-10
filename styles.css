@@ -107,6 +107,11 @@ button {
     color: white;
 }
 
+#addFiveMinutes {
+    background-color: var(--primary-light);
+    color: white;
+}
+
 button:hover {
     transform: translateY(-2px);
     filter: brightness(1.05);

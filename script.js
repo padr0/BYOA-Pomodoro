@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const completedCountDisplay = document.getElementById('completedCount');
     const totalCyclesDisplay = document.getElementById('totalCycles');
     const toggleModeButton = document.getElementById('toggleMode');
+    const addFiveMinutesButton = document.getElementById('addFiveMinutes');
 
     // Timer variables
     let timer;
@@ -251,10 +252,27 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStatus();
     }
 
+    // Add this function to handle adding 5 minutes
+    function addFiveMinutes() {
+        if (!isRunning) return;
+        
+        // Add 5 minutes (300 seconds) to the current timer
+        const currentTotalSeconds = calculateTotalSeconds();
+        const newTotalSeconds = currentTotalSeconds + 300;
+        
+        // Update the display
+        updateTimeFromSeconds(newTotalSeconds);
+        updateDisplay();
+        
+        // Update the total duration for the timer calculation
+        totalDuration += 300 * 1000; // Add 5 minutes in milliseconds
+    }
+
     // Event listeners
     startPauseButton.addEventListener('click', handleStartPause);
     resetButton.addEventListener('click', resetTimer);
     toggleModeButton.addEventListener('click', toggleMode);
+    addFiveMinutesButton.addEventListener('click', addFiveMinutes);
     
     // Settings event listeners
     workTimeInput.addEventListener('change', () => {
